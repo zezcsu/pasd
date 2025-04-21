@@ -38,22 +38,42 @@ def group_by_keys_nothrow(data, keys=base_plus_ext, lcase=True, suffixes=None, h
     """
     current_sample = None
     for filesample in data:
-        assert isinstance(filesample, dict)
-        fname, value = filesample["fname"], filesample["data"]
-        prefix, suffix = keys(fname)
-        if prefix is None:
+        # Skip if not a dictionary
+        if not isinstance(filesample, dict):
+            warning_msg = f"Expected dict, got {type(filesample)}"
+            warnings.warn(warning_msg)
             continue
-        if lcase:
-            suffix = suffix.lower()
-        # FIXME webdataset version throws if suffix in current_sample, but we have a potential for
-        #  this happening in the current LAION400m dataset if a tar ends with same prefix as the next
-        #  begins, rare, but can happen since prefix aren't unique across tar files in that dataset
-        if current_sample is None or prefix != current_sample["__key__"] or suffix in current_sample:
-            if valid_sample(current_sample):
-                yield current_sample
-            current_sample = {"__key__": prefix, "__url__": filesample["__url__"]}
-        if suffixes is None or suffix in suffixes:
-            current_sample[suffix] = value
+            
+        # Safely get fname and value
+        fname = filesample.get("fname")
+        value = filesample.get("data")
+        
+        # Skip if missing required fields
+        if fname is None or value is None:
+            warning_msg = f"Sample missing 'fname' or 'data': {filesample.keys()}"
+            warnings.warn(warning_msg)
+            continue
+        try:
+            prefix, suffix = keys(fname)
+            if prefix is None:
+                continue
+            if lcase:
+                suffix = suffix.lower()
+            # FIXME webdataset version throws if suffix in current_sample, but we have a potential for
+            #  this happening in the current LAION400m dataset if a tar ends with same prefix as the next
+            #  begins, rare, but can happen since prefix aren't unique across tar files in that dataset
+            if current_sample is None or prefix != current_sample["__key__"] or suffix in current_sample:
+                if valid_sample(current_sample):
+                    yield current_sample
+                current_sample = {"__key__": prefix, "__url__": filesample["__url__"]}
+            if suffixes is None or suffix in suffixes:
+                current_sample[suffix] = value
+                
+        except Exception as e:
+            warning_msg = f"Error processing sample {fname}: {str(e)}"
+            warnings.warn(warning_msg)
+            continue
+            
     if valid_sample(current_sample):
         yield current_sample
 
