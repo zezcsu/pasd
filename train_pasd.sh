@@ -13,7 +13,7 @@ accelerate launch  train_pasd.py \
 	--control_type="realisr" \
 	--mixed_precision="fp16" \
 	--dataloader_num_workers=8 \
-    --train_shards_path_or_url="datasets/train_part_{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}.tar" 
+    --train_shards_path_or_url="datasets/train_part_{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}.tar" \
     --logging_dir="log"
 # --max_train_samples=10000000 \
 #    --multi_gpu --num_processes=8 --gpu_ids '0,1,2,3,4,5,6,7' \
